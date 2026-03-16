@@ -11,7 +11,7 @@ def run_subdomains(args):
     try:
         # On se fait passer pour un navigateur standard
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=45)
         
         if response.status_code != 200:
             print(f"[-] Erreur de l'API crt.sh (Code: {response.status_code}). Réessayez plus tard.")
