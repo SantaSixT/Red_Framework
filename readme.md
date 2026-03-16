@@ -68,3 +68,8 @@ python arsenal.py c2 -l 0.0.0.0 -p 4444
 * modules/ : Scripts d'attaque autonomes (Enum, Brute, Scan, etc.).
 
 ---
+
+Amélioration
+1.  **L'Usine à Payloads (Obfuscation) :** Créer un module `payload_gen.py` qui prend une commande (ex: `whoami`) et génère une version encodée (Base64, Hex) ou un "One-Liner" PowerShell obscurci. L'objectif est de comprendre comment les attaquants cachent leur code source pour échapper aux règles statiques des EDR et des WAF (Web Application Firewalls).
+2.  **Le "Banner Grabber" (Vulnérabilités) :** Améliorer notre scanner de ports réseau. Actuellement, il devine le service (ex: "Port 22 = SSH"). Nous pouvons lui apprendre à capturer la "Bannière", c'est-à-dire lire la vraie réponse du serveur pour extraire la version exacte du logiciel (ex: `OpenSSH 7.2p2`), ce qui permet ensuite de chercher les exploits associés (CVE).
+3.  **L'Extracteur de Métadonnées (Ingénierie Sociale) :** Un outil qui télécharge un PDF public depuis un site cible et lit les métadonnées cachées (EXIF) pour y trouver le nom complet du créateur, son système d'exploitation et sa version d'Adobe/Word. Le point de départ parfait pour une attaque de Phishing.
