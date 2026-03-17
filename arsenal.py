@@ -14,6 +14,10 @@ from modules.payload_gen import run_payload
 from modules.hash_crack import run_crack
 from modules.web_spider import run_spider
 from modules.smb_ghost import run_smb
+from modules.s3_scanner import run_s3
+from modules.ad_inquisitor import run_ldap
+from modules.secret_sniper import run_secrets
+from modules.vuln_headers import run_headers
 
 
 # ==========================================
@@ -122,6 +126,28 @@ def main():
     parser_smb = subparsers.add_parser("smb", help="Traque les partages Windows (Null Session) sur le port 445")
     parser_smb.add_argument("-T", "--target", required=True, help="IP ou nom d'hôte du serveur Windows cible")
     parser_smb.set_defaults(func=run_smb)
+
+# --- Module: S3 Scanner ---
+    parser_s3 = subparsers.add_parser("s3", help="Recherche de Buckets AWS S3 mal configurés")
+    parser_s3.add_argument("-n", "--name", required=True, help="Nom de l'entreprise (ex: tesla)")
+    parser_s3.set_defaults(func=run_s3)
+
+# --- Module: LDAP ---
+    p_ldap = subparsers.add_parser("ldap", help="Vérifie l'Anonymous Bind LDAP (Port 389)")
+    p_ldap.add_argument("-T", "--target", required=True)
+    p_ldap.set_defaults(func=run_ldap)
+
+    # --- Module: Secrets ---
+    p_sec = subparsers.add_parser("secrets", help="Cherche des fichiers sensibles (.git, .env...)")
+    p_sec.add_argument("-u", "--url", required=True)
+    p_sec.set_defaults(func=run_secrets)
+
+    # --- Module: Headers ---
+    p_head = subparsers.add_parser("headers", help="Analyse les en-têtes de sécurité HTTP")
+    p_head.add_argument("-u", "--url", required=True)
+    p_head.set_defaults(func=run_headers)
+
+
 
     # 3. Exécution finale
     args = parser.parse_args()
