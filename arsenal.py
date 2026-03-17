@@ -12,6 +12,8 @@ from modules.port_scan import run_scan
 from modules.c2_server import run_c2
 from modules.payload_gen import run_payload
 from modules.hash_crack import run_crack
+from modules.web_spider import run_spider
+from modules.smb_ghost import run_smb
 
 
 # ==========================================
@@ -55,15 +57,15 @@ def main():
     # 2. Définition des Sous-Commandes
     subparsers = parser.add_subparsers(title="Modules disponibles", dest="module", required=True)
 
-    # --- Module: Enum ---
+# --- Module: Enum ---
     parser_enum = subparsers.add_parser("enum", help="Énumération web des répertoires et fichiers")
     parser_enum.add_argument("-u", "--url", required=True)
     parser_enum.add_argument("-w", "--wordlist", required=True)
     parser_enum.add_argument("-t", "--threads", type=int, default=20)
     parser_enum.add_argument("-e", "--extensions", type=str, default="", help="Extensions (ex: .bak,.php)")
     parser_enum.set_defaults(func=run_enum)
-    
-    # --- Module: Brute-Force ---
+
+# --- Module: Brute-Force ---
     parser_brute = subparsers.add_parser("brute", help="Brute-Force de formulaire HTTP POST")
     parser_brute.add_argument("-u", "--url", required=True, help="URL du formulaire de login")
     parser_brute.add_argument("-user", "--username", required=True, help="Nom d'utilisateur à cibler")
@@ -71,17 +73,17 @@ def main():
     parser_brute.add_argument("-t", "--threads", type=int, default=10)
     parser_brute.set_defaults(func=run_brute)
 
-    # --- Module: Wordlist ---
+# --- Module: Wordlist ---
     parser_wordlist = subparsers.add_parser("wordlist", help="Génération de dictionnaire ciblé")
     parser_wordlist.add_argument("-k", "--keywords", required=True, help="Mots-clés (séparés par des virgules)")
     parser_wordlist.set_defaults(func=run_wordlist)
 
-    # --- Module: Subdomain OSINT ---
+# --- Module: Subdomain OSINT ---
     parser_subdomain = subparsers.add_parser("subdomain", help="Reconnaissance OSINT de sous-domaines via crt.sh")
     parser_subdomain.add_argument("-d", "--domain", required=True, help="Domaine cible (ex: defcon.org)")
     parser_subdomain.set_defaults(func=run_subdomains)
 
-    # --- Module: Port Scanner ---
+# --- Module: Port Scanner ---
     parser_scan = subparsers.add_parser("scan", help="Scan furtif de ports TCP avec Banner Grabbing")
     parser_scan.add_argument("-T", "--target", required=True, help="IP ou Domaine cible")
     parser_scan.add_argument("-s", "--start", type=int, default=1, help="Port de début (défaut: 1)")
@@ -89,25 +91,37 @@ def main():
     parser_scan.add_argument("-t", "--threads", type=int, default=100, help="Nombre de sockets simultanés")
     parser_scan.set_defaults(func=run_scan)
 
-    # --- Module: C2 Server ---
+# --- Module: C2 Server ---
     parser_c2 = subparsers.add_parser("c2", help="Démarre le serveur d'écoute pour les Reverse Shells")
     parser_c2.add_argument("-l", "--listen", type=str, default="0.0.0.0", help="IP d'écoute")
     parser_c2.add_argument("-p", "--port", type=int, default=4444, help="Port d'écoute (défaut: 4444)")
     parser_c2.set_defaults(func=run_c2)
 
-    # --- Module: Payload Generator ---
+# --- Module: Payload Generator ---
     parser_payload = subparsers.add_parser("payload", help="Génère un payload obfusqué pour l'évasion d'AV/EDR")
     group = parser_payload.add_mutually_exclusive_group(required=True)
     group.add_argument("-c", "--cmd", type=str, help="Commande système en clair (ex: 'whoami')")
     group.add_argument("--revshell", type=str, help="Génère un agent pointant vers IP:PORT (ex: 127.0.0.1:4444)")
     parser_payload.set_defaults(func=run_payload)
 
-    # --- Module: Hash Cracker (Offline) ---
+# --- Module: Hash Cracker (Offline) ---
     parser_crack = subparsers.add_parser("crack", help="Casseur de hash hors-ligne (MD5, SHA1, SHA256)")
     parser_crack.add_argument("--hash", required=True, help="Le hash à casser (ex: 5f4dcc...)")
     parser_crack.add_argument("--algo", choices=['md5', 'sha1', 'sha256'], default='md5', help="Algorithme (défaut: md5)")
     parser_crack.add_argument("-w", "--wordlist", required=True, help="Chemin vers le dictionnaire")
     parser_crack.set_defaults(func=run_crack)
+
+# --- Module: Web Spider (Crawler) ---
+    parser_spider = subparsers.add_parser("spider", help="Cartographie récursive d'un site web (Crawler)")
+    parser_spider.add_argument("-u", "--url", required=True, help="URL de départ (ex: http://cible.com)")
+    parser_spider.add_argument("-d", "--depth", type=int, default=2, help="Profondeur d'exploration (défaut: 2)")
+    parser_spider.add_argument("-t", "--threads", type=int, default=10, help="Requêtes simultanées")
+    parser_spider.set_defaults(func=run_spider)
+
+# --- Module: Fantôme SMB (Null Session) ---
+    parser_smb = subparsers.add_parser("smb", help="Traque les partages Windows (Null Session) sur le port 445")
+    parser_smb.add_argument("-T", "--target", required=True, help="IP ou nom d'hôte du serveur Windows cible")
+    parser_smb.set_defaults(func=run_smb)
 
     # 3. Exécution finale
     args = parser.parse_args()
