@@ -21,6 +21,7 @@ from modules.vuln_headers import run_headers
 from modules.brute_generic import run_brute_custom
 from core.reporter import show_notes
 from modules.cms_detect import run_cms
+from modules.sub_enum import run_sub_enum
 
 
 # ==========================================
@@ -176,6 +177,17 @@ def main():
     p_cms = subparsers.add_parser("cms", help="Identifie le CMS utilisé (WordPress, Joomla, etc.)")
     p_cms.add_argument("-u", "--url", required=True, help="URL cible")
     p_cms.set_defaults(func=run_cms)
+
+# --- Module: Subdomain Scanner ---
+    p_sub = subparsers.add_parser("sub", help="Énumération DNS de sous-domaines")
+    p_sub.add_argument("-d", "--domain", required=True, help="Domaine racine")
+    p_sub.add_argument("-w", "--wordlist", required=True, help="Dictionnaire")
+    p_sub.add_argument("-t", "--threads", type=int, default=50, help="Threads DNS")
+    
+    # AJOUT DU FLAG AUTO-SCAN
+    p_sub.add_argument("--auto-scan", action="store_true", help="Lance un scan de ports sur chaque sous-domaine trouvé")
+    
+    p_sub.set_defaults(func=run_sub_enum)
 
 
 
