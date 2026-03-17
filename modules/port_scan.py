@@ -8,37 +8,51 @@ from core.ports_db import TOP_PORTS
 
 async def scan_port(ip, port, semaphore, timeout=1.5):
     """
-    Tente de réaliser un TCP Full Connect sur un port spécifique
-    et identifie le service probable via la base de données centrale.
+    Tente un TCP Full Connect, identifie le service probable,
+    et tente une capture de bannière (Banner Grabbing) pour la version.
     """
     async with semaphore:
         try:
-            # asyncio.open_connection gère la création du socket TCP en arrière-plan
             fut = asyncio.open_connection(ip, port)
-            
-            # DevSecOps : On impose un timeout strict (1.5s par défaut). 
-            # Si le pare-feu cible "Drop" (ignore) le paquet, on n'attend pas indéfiniment.
             reader, writer = await asyncio.wait_for(fut, timeout=timeout)
             
-            # Résolution du nom du service via notre glossaire externe
             service_name = TOP_PORTS.get(port, "Service Inconnu")
+            banner_info = "" # Par défaut, la bannière est vide
             
-            # Affichage enrichi pour l'auditeur
-            print(f"[+] Port {port:<5}/TCP | État: OUVERT | Service: {service_name}")
+            # ==========================================
+            # DÉBUT DU BANNER GRABBING (Red Team Active)
+            # ==========================================
+            try:
+                # Si c'est un port web, le serveur attend qu'on lui parle en premier.
+                # On envoie une requête HTTP très basique (HEAD demande juste les infos, pas la page)
+                if port in [80, 443, 8000, 8080, 8443]:
+                    writer.write(b"HEAD / HTTP/1.0\r\n\r\n")
+                    await writer.drain()
+                    
+                # On écoute la réponse du serveur avec un timeout très court (1 seconde)
+                # pour ne pas ralentir le scan global.
+                data = await asyncio.wait_for(reader.read(1024), timeout=1.0)
+                
+                if data:
+                    # On nettoie la réponse brute : on décode, on prend la 1ère ligne, on vire les espaces
+                    clean_banner = data.decode('utf-8', errors='ignore').split('\n')[0].strip()
+                    # On garde seulement 60 caractères pour garder le terminal propre
+                    if clean_banner:
+                        banner_info = f" | Info: {clean_banner[:60]}"
+                        
+            except Exception:
+                # Si le timeout expire ou que le serveur ne dit rien, on ignore en silence
+                pass
+            # ==========================================
             
-            # DevSecOps (Blue Team Practice) : On referme la porte proprement.
-            # Cela envoie un paquet FIN (Finish) pour libérer les ressources du serveur cible.
+            print(f"[+] Port {port:<5}/TCP | État: OUVERT | Service: {service_name}{banner_info}")
+            
             writer.close()
             await writer.wait_closed()
-            
             return port
             
-        except asyncio.TimeoutError:
-            pass # Le port est probablement filtré par un pare-feu (Drop)
-        except ConnectionRefusedError:
-            pass # Le port est fermé, le serveur a répondu activement (RST)
-        except OSError:
-            pass # Erreur système (ex: route réseau introuvable)
+        except (asyncio.TimeoutError, ConnectionRefusedError, OSError):
+            pass 
         except Exception:
             pass
             
