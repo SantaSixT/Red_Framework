@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import sys
 from urllib.parse import urlparse
+from core.reporter import add_finding
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 
@@ -15,8 +16,16 @@ async def check_url(session, target_url, path, semaphore):
         try:
             async with session.get(url, allow_redirects=False, timeout=5) as response:
                 status = response.status
+                # Si le serveur ne répond pas "Non trouvé" (404)
                 if status != 404:
-                    print(f"[+] {status} - {url}")
+                    # 1. Affichage dans le terminal
+                    print(f"[\033[92m+\033[0m] {status} - {url}")
+                    
+                    # ==========================================
+                    # 2. SAUVEGARDE AUTOMATIQUE AU RAPPORT (V2)
+                    # ==========================================
+                    add_finding("Énumération Web", target_url, f"Découverte (HTTP {status}) : **{url}**")
+                    
         except asyncio.TimeoutError:
             pass
         except aiohttp.ClientError:

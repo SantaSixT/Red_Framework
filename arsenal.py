@@ -11,6 +11,8 @@ from modules.brute_http import run_brute
 from modules.port_scan import run_scan
 from modules.c2_server import run_c2
 from modules.payload_gen import run_payload
+from modules.hash_crack import run_crack
+
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -99,7 +101,14 @@ def main():
     group.add_argument("-c", "--cmd", type=str, help="Commande système en clair (ex: 'whoami')")
     group.add_argument("--revshell", type=str, help="Génère un agent pointant vers IP:PORT (ex: 127.0.0.1:4444)")
     parser_payload.set_defaults(func=run_payload)
-    
+
+    # --- Module: Hash Cracker (Offline) ---
+    parser_crack = subparsers.add_parser("crack", help="Casseur de hash hors-ligne (MD5, SHA1, SHA256)")
+    parser_crack.add_argument("--hash", required=True, help="Le hash à casser (ex: 5f4dcc...)")
+    parser_crack.add_argument("--algo", choices=['md5', 'sha1', 'sha256'], default='md5', help="Algorithme (défaut: md5)")
+    parser_crack.add_argument("-w", "--wordlist", required=True, help="Chemin vers le dictionnaire")
+    parser_crack.set_defaults(func=run_crack)
+
     # 3. Exécution finale
     args = parser.parse_args()
     
