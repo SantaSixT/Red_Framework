@@ -18,6 +18,9 @@ from modules.s3_scanner import run_s3
 from modules.ad_inquisitor import run_ldap
 from modules.secret_sniper import run_secrets
 from modules.vuln_headers import run_headers
+from modules.brute_generic import run_brute_custom
+from core.reporter import show_notes
+from modules.cms_detect import run_cms
 
 
 # ==========================================
@@ -60,6 +63,7 @@ def main():
     
     # 2. Définition des Sous-Commandes
     subparsers = parser.add_subparsers(title="Modules disponibles", dest="module", required=True)
+    
 
 # --- Module: Enum ---
     parser_enum = subparsers.add_parser("enum", help="Énumération web des répertoires et fichiers")
@@ -115,11 +119,17 @@ def main():
     parser_crack.add_argument("-w", "--wordlist", required=True, help="Chemin vers le dictionnaire")
     parser_crack.set_defaults(func=run_crack)
 
-# --- Module: Web Spider (Crawler) ---
-    parser_spider = subparsers.add_parser("spider", help="Cartographie récursive d'un site web (Crawler)")
-    parser_spider.add_argument("-u", "--url", required=True, help="URL de départ (ex: http://cible.com)")
-    parser_spider.add_argument("-d", "--depth", type=int, default=2, help="Profondeur d'exploration (défaut: 2)")
-    parser_spider.add_argument("-t", "--threads", type=int, default=10, help="Requêtes simultanées")
+# 1. On crée le sous-parser pour le spider (Vérifie bien le nom ici !)
+    parser_spider = subparsers.add_parser("spider", help="Cartographie récursive d'un site web")
+    
+    # 2. On lui ajoute ses arguments (C'est ici que tu avais l'erreur)
+    parser_spider.add_argument("-u", "--url", required=True, help="URL de départ")
+    parser_spider.add_argument("-d", "--depth", type=int, default=2, help="Profondeur")
+    parser_spider.add_argument("-t", "--threads", type=int, default=10, help="Threads")
+    
+    # --- AJOUT DE L'OPTION PROXY ---
+    parser_spider.add_argument("--proxy", help="Proxy (ex: socks5://127.0.0.1:9050)")
+    
     parser_spider.set_defaults(func=run_spider)
 
 # --- Module: Fantôme SMB (Null Session) ---
@@ -146,6 +156,26 @@ def main():
     p_head = subparsers.add_parser("headers", help="Analyse les en-têtes de sécurité HTTP")
     p_head.add_argument("-u", "--url", required=True)
     p_head.set_defaults(func=run_headers)
+
+# --- Module: Brute Force Maison ---
+    p_brute = subparsers.add_parser("brute-web", help="Moteur de brute force HTTP POST sur-mesure")
+    p_brute.add_argument("-u", "--url", required=True, help="URL du formulaire (ex: http://site.com/login)")
+    p_brute.add_argument("-U", "--user", required=True, help="Nom d'utilisateur à cibler")
+    p_brute.add_argument("-w", "--wordlist", required=True, help="Chemin du dictionnaire")
+    p_brute.add_argument("--user-field", default="username", help="Nom du champ utilisateur (HTML name)")
+    p_brute.add_argument("--pass-field", default="password", help="Nom du champ mot de passe (HTML name)")
+    p_brute.add_argument("--fail", default="Invalid", help="Message d'erreur en cas d'échec (ex: 'Mauvais mot de passe')")
+    p_brute.add_argument("-t", "--threads", type=int, default=10, help="Nombre de tentatives simultanées")
+    p_brute.set_defaults(func=run_brute_custom)
+
+# --- Module: Viewer de Notes ---
+    p_notes = subparsers.add_parser("notes", help="Affiche le rapport d'audit actuel dans le terminal")
+    p_notes.set_defaults(func=lambda args: show_notes())
+
+# --- Module: CMS Detector ---
+    p_cms = subparsers.add_parser("cms", help="Identifie le CMS utilisé (WordPress, Joomla, etc.)")
+    p_cms.add_argument("-u", "--url", required=True, help="URL cible")
+    p_cms.set_defaults(func=run_cms)
 
 
 
