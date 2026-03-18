@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+REPORT_DIR = "reports"
 REPORT_FILE = "arsenal_report.md"
 
 def init_report():
@@ -11,19 +12,22 @@ def init_report():
             f.write(f"**Date de début de mission :** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             f.write("---\n\n")
 
-def add_finding(module_name, target, finding_details):
-    """Ajoute une découverte formatée en Markdown au rapport global."""
-    init_report()
-    timestamp = datetime.now().strftime('%H:%M:%S')
+def add_finding(module_name, target, details):
+    """Ajoute une découverte au rapport Markdown."""
     
-    with open(REPORT_FILE, "a", encoding="utf-8") as f:
-        f.write(f"### 🎯 Module : `{module_name}` | Cible : `{target}`\n")
-        f.write(f"- **Heure :** {timestamp}\n")
-        f.write(f"- **Découverte :** {finding_details}\n\n")
+    # 1. Création automatique du dossier s'il n'existe pas
+    if not os.path.exists(REPORT_DIR):
+        os.makedirs(REPORT_DIR)
         
-    # Petit retour visuel discret pour l'opérateur
-    print(f"[\033[92m+\033[0m] Résultat sauvegardé dans {REPORT_FILE}")
-    
+    # 2. Écriture dans le fichier (le reste du code ne change pas)
+    try:
+        with open(REPORT_FILE, "a", encoding="utf-8") as f:
+            f.write(f"### 🎯 [{module_name}] - {target}\n")
+            f.write(f"- **Date :** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"- **Détails :** {details}\n")
+            f.write("---\n")
+    except Exception as e:
+        print(f"[-] Erreur de reporting : {e}")
 
 def show_notes():
     """Lit et affiche le rapport Markdown de manière stylisée dans le terminal."""

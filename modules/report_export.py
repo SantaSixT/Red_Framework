@@ -2,8 +2,10 @@ import os
 import markdown
 from datetime import datetime
 
-REPORT_MD = "arsenal_report.md"
-REPORT_HTML = "arsenal_report.html"
+# On pointe vers le nouveau dossier
+REPORT_DIR = "reports"
+REPORT_MD = os.path.join(REPORT_DIR, "arsenal_report.md")
+REPORT_HTML = os.path.join(REPORT_DIR, "arsenal_report.html")
 
 # CSS "Dark Mode / Hacker" pour le rapport final
 HTML_TEMPLATE = """

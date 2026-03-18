@@ -1,8 +1,8 @@
 ---
 
-# ⚔️ Red_Framework (Giga-Arsenal V4)
+# ⚔️ Red_Framework (Giga-Arsenal V5)
 
-Un framework d'automatisation Red Team "Enterprise-Grade" développé en Python. Cette version **V4 (Ghost Update)** transforme l'outil en un écosystème récursif capable de découvrir, identifier et auditer des infrastructures entières avec une discrétion renforcée.
+Un framework d'automatisation Red Team "Enterprise-Grade" développé en Python. Cette version **V5 (Enterprise Update)** transforme l'outil en un écosystème autonome, asynchrone et intelligent, intégrant un mode "Auto-Pilot" pour la gestion des dictionnaires et un C2 Multi-Sessions.
 
 ⚠️ **Avertissement Légal :** Cet outil est strictement réservé à un usage légal dans le cadre d'audits de cybersécurité autorisés ou de laboratoires DevSecOps. L'auteur décline toute responsabilité en cas d'usage malveillant.
 
@@ -12,82 +12,51 @@ Un framework d'automatisation Red Team "Enterprise-Grade" développé en Python.
 
 ```powershell
 # Cloner et entrer dans le répertoire
-git clone https://github.com/votre-nom/Red_Framework.git
+git clone [https://github.com/votre-nom/Red_Framework.git](https://github.com/votre-nom/Red_Framework.git)
 cd Red_Framework
 
-# Installer les nouvelles dépendances (dnspython, aiohttp_socks, beautifulsoup4, ldap3)
+# Installer les dépendances (aiohttp, dnspython, beautifulsoup4, markdown, etc.)
 pip install -r requirements.txt
 
+# Initialiser l'arsenal (Télécharge les wordlists SecLists par défaut)
+python arsenal.py update
 ```
 
 ---
 
-## 🚀 Guide des Modules (Arsenal V4)
+## 🧠 Philosophie de la V5
 
-L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsenal.py <module> -h` pour le détail des options.
-
-### 📡 1. Reconnaissance Réseau & Sous-domaines
-
-* **`scan`** : Scanner de ports TCP asynchrone (CVE & Bannières).
-* **`sub`** : **(Nouveau)** Énumérateur DNS de sous-domaines ultra-rapide.
-* *Option `--auto-scan*` : Lance automatiquement un scan de ports sur chaque nouvelle cible découverte.
-
-
-* **`smb`** : Test de "Null Session" (Port 445) et énumération de partages.
-* **`ldap`** : Inquisiteur Active Directory (Port 389) via Anonymous Bind.
-
-### 🌐 2. Audit Web & Intelligence CMS
-
-* **`spider`** : Crawler récursif avec **détection automatique de CMS** intégrée (WordPress, Joomla, etc.). Supporte désormais l'option `--proxy`.
-* **`cms`** : **(Nouveau)** Moteur de fingerprinting dédié pour identifier les technologies web via signatures.
-* **`brute-web`** : **(Nouveau)** Moteur de brute-force HTTP POST "maison" avec gestion personnalisée des champs et messages d'échec.
-* **`secrets`** : Sniper de fichiers sensibles (`.git`, `.env`, `.aws/credentials`).
-* **`headers`** : Analyseur de vulnérabilités de configuration (CORS, CSP, Security Headers).
-
-### ☁️ 3. Cloud & Furtivité
-
-* **`s3`** : Chasseur de Buckets AWS S3 via permutations de noms d'entreprise.
-* **`Option --proxy`** : **(Global)** Disponible sur les modules Web pour router le trafic via **Tor** (`socks5://127.0.0.1:9050`) ou tout autre proxy SOCKS5/HTTP.
-
-### 🔑 4. Exploitation & Post-Exploitation
-
-* **`crack`** : Casseur de hashes (MD5, SHA1, SHA256).
-* **`payload`** : Générateur d'obfuscation PowerShell.
-* **`c2`** : Serveur de commande et contrôle asynchrone.
-
-### 📖 5. Intelligence & Reporting
-
-* **`notes`** : **(Nouveau)** Visionneuse de rapport intégrée au terminal. Affiche `arsenal_report.md` avec stylisation couleur.
-* **`wordlist`** : Générateur de dictionnaires par mutation.
+1. **Auto-Pilot (Cascade) :** Les modules offensifs (`brute-web`, `crack`, `sub`) n'ont plus besoin qu'on leur spécifie un dictionnaire. Ils utilisent par défaut une cascade intelligente : ils testent d'abord vos listes sur-mesure, puis basculent silencieusement sur les standards de l'industrie (SecLists).
+2. **Reconnaissance Hybride :** Fusion des techniques passives (OSINT via API) et actives (Brute-force asynchrone) pour une couverture maximale.
+3. **Reporting Centralisé :** Vos découvertes sont formatées en temps réel et exportables en un clic au format HTML/PDF professionnel.
 
 ---
 
-## 📂 Structure de la V4
+## 📂 Architecture du Framework
 
 ```text
 Red_Framework/
-├── arsenal.py          # Routeur principal
-├── core/
-│   ├── proxy_manager.py # Gestionnaire de furtivité (SOCKS5/Tor)
-│   ├── reporter.py      # Moteur Markdown & Visionneuse de notes
-│   └── [..]
-└── modules/
-    ├── sub_enum.py      # Énumération DNS récursive
-    ├── cms_detect.py    # Fingerprinting intelligent
-    ├── brute_generic.py # Moteur brute-force maison
-    └── [..]
-
+├── arsenal.py          # Routeur principal (Point d'entrée unique)
+├── core/               # Le Cerveau
+│   ├── utils.py        # Résolveur intelligent de wordlists
+│   ├── reporter.py     # Moteur d'auto-documentation Markdown
+│   └── proxy_manager.py# Gestionnaire de furtivité (Tor/SOCKS5)
+├── modules/            # L'Armurerie (Modules offensifs asynchrones)
+├── wordlists/          # Les Munitions (Téléchargées via 'update' & générées)
+└── reports/            # Les Trophées (Rapports .md et .html générés)
 ```
 
 ---
 
-# 📖 Aide-Mémoire des Commandes - Red_Framework
+## 📖 Aide-Mémoire des Commandes (Cheatsheet)
+
+L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsenal.py <module> -h` pour le détail des options.
 
 ### 📡 1. Reconnaissance & Infrastructure (Élargir la cible)
 
 | Commande | Action |
 | --- | --- |
-| `python arsenal.py sub -d <domaine> -w <wordlist> [--auto-scan]` | **Énumération DNS :** Trouve les sous-domaines. L'option `--auto-scan` lance un scan de ports immédiat sur chaque découverte. |
+| `python arsenal.py sub -d <domaine> [--auto-scan]` | **Hybride Enum :** Reconnaissance OSINT (`crt.sh`) + Brute-force DNS. L'option `--auto-scan` lance un scan de ports sur les cibles vivantes. |
 | `python arsenal.py scan -T <IP>` | **Scanner de Ports :** Scan TCP asynchrone, Banner Grabbing et recherche automatique de CVE. |
 | `python arsenal.py s3 -n <nom_entreprise>` | **S3 Hunter :** Cherche des buckets AWS S3 mal configurés basés sur le nom de l'entreprise. |
 
@@ -95,31 +64,29 @@ Red_Framework/
 
 | Commande | Action |
 | --- | --- |
-| `python arsenal.py spider -u <URL> -d <profondeur> [--proxy <url>]` | **Web Crawler :** Cartographie récursive. Lance automatiquement le détecteur de CMS au démarrage. Supporte Tor/SOCKS5. |
+| `python arsenal.py spider -u <URL> -d <profondeur>` | **Web Crawler :** Cartographie récursive. Lance automatiquement le détecteur de CMS au démarrage. Supporte `--proxy`. |
 | `python arsenal.py cms -u <URL>` | **CMS Detect :** Identifie WordPress, Joomla, Drupal, etc. via signatures. |
 | `python arsenal.py secrets -u <URL>` | **Secret Sniper :** Cherche les dossiers `.git`, `.env`, backups et fichiers de configuration exposés. |
 | `python arsenal.py headers -u <URL>` | **Header Analyzer :** Analyse les en-têtes de sécurité (CORS, CSP, X-Frame, etc.). |
-| `python arsenal.py brute-web -u <URL> -U <user> -w <wordlist>` | **Custom Brute :** Brute-force de formulaires HTTP POST avec détection de message d'échec sur mesure. |
+| `python arsenal.py brute-web -u <URL> -U <user>` | **Custom Brute :** Brute-force HTTP POST asynchrone (Early Exit). Utilise l'Auto-Pilot pour les dictionnaires par défaut. |
 
 ### 🔑 3. Exploitation & Interne (Prendre la main)
 
 | Commande | Action |
 | --- | --- |
-| `python arsenal.py crack -s <hash> -w <wordlist>` | **Hash Cracker :** Casse les hashes MD5, SHA1, SHA256 hors-ligne. |
+| `python arsenal.py crack --hash <hash>` | **Hash Cracker :** Casse les hashes MD5, SHA1, SHA256 hors-ligne en mode Cascade (Auto-Pilot). |
 | `python arsenal.py smb -T <IP>` | **SMB Ghost :** Test de Null Session et énumération des partages Windows (Port 445). |
 | `python arsenal.py ldap -T <IP>` | **LDAP Inquisitor :** Extraction d'infos Active Directory via Anonymous Bind (Port 389). |
-| `python arsenal.py payload` | **Payload Gen :** Génère des charges utiles obfusquées pour l'évasion d'antivirus. |
-| `python arsenal.py c2` | **C2 Server :** Active le serveur de Command & Control pour réceptionner les Reverse Shells. |
+| `python arsenal.py payload -c <cmd> / --revshell` | **Payload Gen :** Génère des charges utiles obfusquées pour l'évasion d'antivirus. |
+| `python arsenal.py c2 -p <port>` | **C2 Server :** Serveur Multi-Sessions en arrière-plan. Supporte Upload/Download et reconnaissance automatique des cibles. |
 
-### 📖 4. Reporting & Outils (Finaliser l'audit)
+### 🛠️ 4. Ressources & Reporting (Gérer l'arsenal)
 
 | Commande | Action |
 | --- | --- |
-| `python arsenal.py notes` | **Note Viewer :** Affiche le rapport `arsenal_report.md` stylisé directement dans le terminal. |
-| `python arsenal.py wordlist -k <mots_clés>` | **Mutation Gen :** Génère des listes de mots de passe par mutation de mots-clés. |
-| `python arsenal.py export` | **Mutation Gen :** Export dans un fichier html avec du CSS le rapport. |
+| `python arsenal.py update` | **Resource Fetcher :** Télécharge instantanément les standards SecLists (Top Passwords, Users, Subs) en local. |
+| `python arsenal.py wordlist -k <mots_clés>` | **Mutation Gen :** Forgera un dictionnaire hybride (Cible + SecLists) dans le répertoire courant. |
+| `python arsenal.py notes` | **Note Viewer :** Affiche le rapport brut d'audit actuel dans le terminal. |
+| `python arsenal.py export` | **Report Generator :** Exporte vos découvertes dans un magnifique Dashboard HTML "Dark Mode" (prêt pour PDF) situé dans `reports/`. |
 
 ---
-
-
-Alors, pour la suite de ton Giga-Outil, est-ce qu'on s'occupe de faire de toi un **expert du reporting (Export HTML/PDF)** ou on renforce ton **contrôle sur les machines cibles (C2 Multitâche)** ?

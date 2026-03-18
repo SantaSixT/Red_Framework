@@ -1,6 +1,0 @@
-admin
-login
-backup
-api
-config
-password
