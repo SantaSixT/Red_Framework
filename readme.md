@@ -66,19 +66,21 @@ L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsena
 | --- | --- |
 | `python arsenal.py spider -u <URL> -d <profondeur>` | **Web Crawler :** Cartographie récursive. Lance automatiquement le détecteur de CMS au démarrage. Supporte `--proxy`. |
 | `python arsenal.py cms -u <URL>` | **CMS Detect :** Identifie WordPress, Joomla, Drupal, etc. via signatures. |
+| `python arsenal.py js-sniper -u <URL>` | **JS Sniper :** Traque les clés d'API et routes cachées dans les fichiers JavaScript clients. |
 | `python arsenal.py secrets -u <URL>` | **Secret Sniper :** Cherche les dossiers `.git`, `.env`, backups et fichiers de configuration exposés. |
 | `python arsenal.py headers -u <URL>` | **Header Analyzer :** Analyse les en-têtes de sécurité (CORS, CSP, X-Frame, etc.). |
-| `python arsenal.py brute-web -u <URL> -U <user>` | **Custom Brute :** Brute-force HTTP POST asynchrone (Early Exit). Utilise l'Auto-Pilot pour les dictionnaires par défaut. |
+| `python arsenal.py brute-web -u <URL> -U <user>` | **Custom Brute :** Brute-force HTTP POST asynchrone (Early Exit) avec mode Cascade pour les dictionnaires. |
 
 ### 🔑 3. Exploitation & Interne (Prendre la main)
 
 | Commande | Action |
 | --- | --- |
-| `python arsenal.py crack --hash <hash>` | **Hash Cracker :** Casse les hashes MD5, SHA1, SHA256 hors-ligne en mode Cascade (Auto-Pilot). |
+| `python arsenal.py crack --hash <hash>` | **Hash Cracker :** Casse les hashes MD5, SHA1, SHA256 hors-ligne avec reprise sur erreur (State Management). |
 | `python arsenal.py smb -T <IP>` | **SMB Ghost :** Test de Null Session et énumération des partages Windows (Port 445). |
 | `python arsenal.py ldap -T <IP>` | **LDAP Inquisitor :** Extraction d'infos Active Directory via Anonymous Bind (Port 389). |
 | `python arsenal.py payload -c <cmd> / --revshell` | **Payload Gen :** Génère des charges utiles obfusquées pour l'évasion d'antivirus. |
-| `python arsenal.py c2 -p <port>` | **C2 Server :** Serveur Multi-Sessions en arrière-plan. Supporte Upload/Download et reconnaissance automatique des cibles. |
+| `python arsenal.py docker --lhost <IP>` | **Docker Breakout :** Génère un script Bash d'évasion pour fuir un conteneur mal configuré et compromettre l'hôte système. |
+| `python arsenal.py c2 -p <port>` | **C2 Server :** Serveur de contrôle multi-sessions asynchrone avec module d'auto-reconnaissance (PrivEsc) intégré. |
 
 ### 🛠️ 4. Ressources & Reporting (Gérer l'arsenal)
 

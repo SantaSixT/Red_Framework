@@ -23,6 +23,7 @@ from modules.sub_enum import run_sub_enum
 from modules.report_export import generate_html
 from modules.wordlist_fetcher import run_update
 from modules.js_sniper import run_js_sniper
+from modules.docker_breaker import run_docker_breaker
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -178,6 +179,13 @@ def main():
     p_sniper.add_argument("-u", "--url", required=True, help="URL de la page web ou directement d'un fichier .js")
     p_sniper.add_argument("-t", "--threads", type=int, default=10, help="Nombre de téléchargements JS simultanés")
     p_sniper.set_defaults(func=run_js_sniper)
+
+# --- Module: Docker Breakout ---
+    p_docker = subparsers.add_parser("docker", help="Génère un script Bash d'évasion de conteneur (Docker/K8s)")
+    p_docker.add_argument("--lhost", required=True, help="Votre adresse IP (pour le reverse shell root)")
+    p_docker.add_argument("--lport", type=int, default=4444, help="Votre port d'écoute")
+    p_docker.add_argument("-o", "--output", default="breakout.sh", help="Nom du script de sortie")
+    p_docker.set_defaults(func=run_docker_breaker)
 
 
 
