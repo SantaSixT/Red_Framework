@@ -117,7 +117,9 @@ Red_Framework/
 | --- | --- |
 | `python arsenal.py notes` | **Note Viewer :** Affiche le rapport `arsenal_report.md` stylisé directement dans le terminal. |
 | `python arsenal.py wordlist -k <mots_clés>` | **Mutation Gen :** Génère des listes de mots de passe par mutation de mots-clés. |
+| `python arsenal.py export` | **Mutation Gen :** Export dans un fichier html avec du CSS le rapport. |
 
 ---
+
 
 Alors, pour la suite de ton Giga-Outil, est-ce qu'on s'occupe de faire de toi un **expert du reporting (Export HTML/PDF)** ou on renforce ton **contrôle sur les machines cibles (C2 Multitâche)** ?

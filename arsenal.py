@@ -22,7 +22,8 @@ from modules.brute_generic import run_brute_custom
 from core.reporter import show_notes
 from modules.cms_detect import run_cms
 from modules.sub_enum import run_sub_enum
-
+from modules.report_export import generate_html
+from modules.wordlist_fetcher import run_update
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -101,11 +102,11 @@ def main():
     parser_scan.set_defaults(func=run_scan)
 
 # --- Module: C2 Server ---
-    parser_c2 = subparsers.add_parser("c2", help="Démarre le serveur d'écoute pour les Reverse Shells")
-    parser_c2.add_argument("-l", "--listen", type=str, default="0.0.0.0", help="IP d'écoute")
-    parser_c2.add_argument("-p", "--port", type=int, default=4444, help="Port d'écoute (défaut: 4444)")
-    parser_c2.set_defaults(func=run_c2)
+    p_c2 = subparsers.add_parser("c2", help="Serveur de Command & Control avancé (Multi-Sessions, Upload/Download)")
+    p_c2.add_argument("-p", "--port", type=int, default=4444, help="Port d'écoute (défaut: 4444)")
+    p_c2.set_defaults(func=run_c2)
 
+    
 # --- Module: Payload Generator ---
     parser_payload = subparsers.add_parser("payload", help="Génère un payload obfusqué pour l'évasion d'AV/EDR")
     group = parser_payload.add_mutually_exclusive_group(required=True)
@@ -188,6 +189,14 @@ def main():
     p_sub.add_argument("--auto-scan", action="store_true", help="Lance un scan de ports sur chaque sous-domaine trouvé")
     
     p_sub.set_defaults(func=run_sub_enum)
+
+# --- Module: Gestionnaire de Ressources ---
+    p_update = subparsers.add_parser("update", help="Télécharge et met à jour toutes les wordlists dans le framework")
+    p_update.set_defaults(func=run_update)
+
+# --- Module: Export HTML/PDF ---
+    p_export = subparsers.add_parser("export", help="Génère un rapport HTML interactif à partir de vos notes")
+    p_export.set_defaults(func=generate_html)
 
 
 
