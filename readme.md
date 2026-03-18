@@ -1,6 +1,6 @@
 ---
 
-# ⚔️ Red_Framework (Giga-Arsenal V5)
+# ⚔️ Red_Framework 
 
 Un framework d'automatisation Red Team "Enterprise-Grade" développé en Python. Cette version **V5 (Enterprise Update)** transforme l'outil en un écosystème autonome, asynchrone et intelligent, intégrant un mode "Auto-Pilot" pour la gestion des dictionnaires et un C2 Multi-Sessions.
 
