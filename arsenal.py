@@ -22,6 +22,7 @@ from modules.cms_detect import run_cms
 from modules.sub_enum import run_sub_enum
 from modules.report_export import generate_html
 from modules.wordlist_fetcher import run_update
+from modules.js_sniper import run_js_sniper
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -171,6 +172,14 @@ def main():
     # --- Module: Viewer de Notes ---
     p_notes = subparsers.add_parser("notes", help="Affiche le rapport d'audit actuel dans le terminal")
     p_notes.set_defaults(func=lambda args: show_notes())
+
+# --- Module: JS Endpoint Sniper ---
+    p_sniper = subparsers.add_parser("js-sniper", help="Traque les clés d'API et routes cachées dans le JavaScript")
+    p_sniper.add_argument("-u", "--url", required=True, help="URL de la page web ou directement d'un fichier .js")
+    p_sniper.add_argument("-t", "--threads", type=int, default=10, help="Nombre de téléchargements JS simultanés")
+    p_sniper.set_defaults(func=run_js_sniper)
+
+
 
     # 3. Exécution finale
     args = parser.parse_args()

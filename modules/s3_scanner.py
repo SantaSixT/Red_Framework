@@ -40,3 +40,9 @@ def run_s3(args):
         check_s3_bucket(bucket_name)
 
     print("[*] Fin du scan S3.")
+
+def setup_parser(subparsers):
+    """Fonction appelée automatiquement par le routeur arsenal.py"""
+    parser_s3 = subparsers.add_parser("s3", help="Recherche de Buckets AWS S3 mal configurés")
+    parser_s3.add_argument("-n", "--name", required=True, help="Nom de l'entreprise (ex: tesla)")
+    parser_s3.set_defaults(func=run_s3)

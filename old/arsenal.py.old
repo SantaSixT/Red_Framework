@@ -1,0 +1,78 @@
+import argparse
+import sys
+import os
+import importlib
+import pkgutil
+
+# Imports Core (Ceux-là restent statiques car c'est le moteur)
+from core.config import load_secure_config
+
+# ==========================================
+# GESTION DES COULEURS (UI)
+# ==========================================
+class Colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
+def print_banner():
+    banner = rf"""{Colors.RED}{Colors.BOLD}
+    ___                                __ 
+   /   |  ______________  ____  ____ _/ / 
+  / /| | / ___/ ___/ _ \/ __ \/ __ `/ /  
+ / ___ |/ /  (__  )  __/ / / / /_/ / /   
+/_/  |_/_/  /____/\___/_/ /_/\__,_/_/    
+                                         
+{Colors.CYAN}:: Framework d'Automatisation Red Team (V6) ::{Colors.RESET}
+{Colors.YELLOW}>> Mode Plug & Play Actif <<{Colors.RESET}
+"""
+    print(banner)
+
+def main():
+    load_secure_config() 
+    
+    parser = argparse.ArgumentParser(
+        description="Arsenal Red Team - Framework de Pentest Custom",
+        epilog="DevSecOps Lab - Usage autorisé uniquement"
+    )
+    
+    subparsers = parser.add_subparsers(title="Modules disponibles", dest="module", required=True)
+    
+    # ==========================================
+    # CHARGEMENT DYNAMIQUE DES MODULES (PLUG & PLAY)
+    # ==========================================
+    modules_dir = os.path.join(os.path.dirname(__file__), "modules")
+    
+    # On scanne le dossier modules/
+    for _, module_name, _ in pkgutil.iter_modules([modules_dir]):
+        try:
+            # On importe le fichier dynamiquement (ex: modules.s3_scanner)
+            module = importlib.import_module(f"modules.{module_name}")
+            
+            # Si le fichier possède une fonction 'setup_parser', on l'exécute !
+            if hasattr(module, "setup_parser"):
+                module.setup_parser(subparsers)
+        except Exception as e:
+            print(f"{Colors.RED}[-] Erreur de chargement dynamique pour {module_name}: {e}{Colors.RESET}")
+
+    # ==========================================
+    # EXÉCUTION
+    # ==========================================
+    args = parser.parse_args()
+    print_banner()
+    
+    # Exécute la fonction associée au module choisi
+    if hasattr(args, 'func'):
+        args.func(args)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n{Colors.RED}[-] Arrêt global du framework par l'auditeur.{Colors.RESET}")
+        sys.exit(0)

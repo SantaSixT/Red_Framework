@@ -23,3 +23,4 @@ def run_ldap(args):
         
     except Exception as e:
         print(f"[-] LDAP sécurisé ou inaccessible : {str(e)}")
+        
