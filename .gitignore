@@ -1,3 +1,31 @@
-.env
+# =========================
+# Red_Framework .gitignore
+# =========================
+
+# 1. Dossiers de résultats et rapports (Données sensibles)
+reports/
+notes/
+
+
+# 2. Munitions et Dictionnaires (Fichiers trop lourds)
+
+*.txt
+
+
+# 3. Fichiers d'état et de session (Générés par le framework)
+.red_session
+breakout.sh
+
+*.db
+*.sqlite
+
+# 4. Fichiers système Python et Environnements virtuels
 __pycache__/
 *.pyc
+.venv/
+venv/
+env/
+
+# 5. OS (Déchets de l'ordinateur)
+.DS_Store
+Thumbs.db
