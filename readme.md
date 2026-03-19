@@ -22,6 +22,17 @@ pip install -r requirements.txt
 python arsenal.py update
 ```
 
+Installer sous linux
+```bash
+# 1. Crée l'environnement virtuel (notre .gitignore va l'ignorer, c'est parfait !)
+python -m venv .venv
+
+# 2. Active-le
+source .venv/bin/activate
+
+# 3. Installe tes munitions en toute sécurité
+pip install -r requirements.txt
+```
 ---
 
 ## 🧠 Philosophie de la V5
