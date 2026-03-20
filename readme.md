@@ -102,4 +102,29 @@ L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsena
 | `python arsenal.py notes` | **Note Viewer :** Affiche le rapport brut d'audit actuel dans le terminal. |
 | `python arsenal.py export` | **Report Generator :** Exporte vos découvertes dans un magnifique Dashboard HTML "Dark Mode" (prêt pour PDF) situé dans `reports/`. |
 
+### 📖 Référence Complète des Modules - Red_Framework V7
+
+| Module | Rôle | Arguments Requis | Arguments Optionnels (Valeurs par défaut) |
+| :--- | :--- | :--- | :--- |
+| **`update`** | Mise à jour des wordlists | *Aucun* | *Aucun* |
+| **`wordlist`** | Générateur de dictionnaire | `-k / --keywords` | `-o / --output` (`custom_wordlist.txt`) |
+| **`sub`** | Énumération DNS | `-d / --domain` | `-w / --wordlist` (`auto`), `-t / --threads` (`50`), `--auto-scan` |
+| **`enum`** | Fuzzing de répertoires | `-u / --url`, `-w / --wordlist` | `-t / --threads` (`20`), `-e / --extensions` (`""`) |
+| **`brute-web`** | Attaque HTTP POST | `-u / --url`, `-U / --user` | `-w / --wordlist` (`auto`), `--user-field` (`username`), `--pass-field` (`password`), `--fail` (`Invalid`), `-t / --threads` (`10`) |
+| **`spider`** | Crawler web récursif | `-u / --url` | `-d / --depth` (`2`), `-t / --threads` (`10`), `--proxy` |
+| **`crack`** | Casseur de hash hors-ligne | `--hash` | `--algo` (`md5`, `sha1`, `sha256` - déf: `md5`), `-w / --wordlist` (`auto`) |
+| **`scan`** | Scanner de ports TCP | `-T / --target` | `-s / --start` (`1`), `-e / --end` (`1024`), `-t / --threads` (`100`) |
+| **`c2`** | Serveur de contrôle | *Aucun* | `-p / --port` (`4444`) |
+| **`payload`** | Générateur d'agent | `-c / --cmd` **OU** `--revshell` | *Aucun* (Choix mutuellement exclusif) |
+| **`cms`** | Fingerprinting web | `-u / --url` | *Aucun* |
+| **`secrets`** | Chasseur de fichiers cachés | `-u / --url` | *Aucun* |
+| **`headers`** | Analyse de sécurité HTTP | `-u / --url` | *Aucun* |
+| **`smb`** | Énumération Null Session | `-T / --target` | *Aucun* |
+| **`s3`** | Chasseur de buckets AWS | `-n / --name` | *Aucun* |
+| **`ldap`** | Requête Anonymous Bind | `-T / --target` | *Aucun* |
+| **`js-sniper`**| Extracteur de secrets JS | `-u / --url` | `-t / --threads` (`10`) |
+| **`docker`** | Évasion de conteneur | `--lhost` | `--lport` (`4444`), `-o / --output` (`breakout.sh`) |
+| **`export`** | Générateur de dashboard | *Aucun* | *Aucun* |
+| **`notes`** | Visionneuse terminal | *Aucun* | *Aucun* |
+
 ---
