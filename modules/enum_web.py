@@ -3,6 +3,7 @@ import aiohttp
 import sys
 from urllib.parse import urlparse
 from core.reporter import add_finding
+from core.waf import detect_waf
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 
@@ -14,7 +15,9 @@ async def check_url(session, target_url, path, semaphore):
     
     async with semaphore:
         try:
-            async with session.get(url, allow_redirects=False, timeout=5) as response:
+            # Création de l'objet timeout pour aiohttp
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with session.get(url, allow_redirects=False, timeout=timeout) as response:
                 status = response.status
                 # Si le serveur ne répond pas "Non trouvé" (404)
                 if status != 404:
@@ -103,7 +106,30 @@ def run_enum(args):
     Elle fait le pont entre le monde synchrone (CLI) et asynchrone (Réseau).
     """
     try:
+        # ==========================================
+        # 1. PRE-FLIGHT CHECK : DÉTECTION DE WAF
+        # ==========================================
+        has_waf, reason = asyncio.run(detect_waf(args.url))
+        
+        if has_waf:
+            print(f"\n[\033[93m!\033[0m] \033[1mATTENTION : WAF DÉTECTÉ SUR LA CIBLE !\033[0m")
+            print(f"    -> Raison : {reason}")
+            print("    -> Risque : Bannissement IP imminent si le scan est trop rapide.")
+            
+            # Demande d'autorisation à l'utilisateur
+            choix = input("[?] Voulez-vous engager la cible quand même ? (o/N) : ")
+            if choix.lower() != 'o':
+                print("[-] Tir annulé. Retour à la base.")
+                return # On quitte sans lancer l'énumération
+                
+        else:
+            print("[\033[92m+\033[0m] Boucliers inactifs (Pas de WAF). Voie libre.")
+
+        # ==========================================
+        # 2. LANCEMENT DE L'ASSAUT
+        # ==========================================
         exts = getattr(args, 'extensions', '')
         asyncio.run(async_main(args.url, args.wordlist, args.threads, exts))
+        
     except KeyboardInterrupt:
         print("\n[-] Énumération interrompue par l'utilisateur.")

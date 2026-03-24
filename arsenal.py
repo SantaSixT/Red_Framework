@@ -1,6 +1,8 @@
 import argparse
 import sys
 import os
+from rich.console import Console
+
 
 # Imports des modules du Framework
 from core.config import load_secure_config
@@ -25,6 +27,8 @@ from modules.wordlist_fetcher import run_update
 from modules.js_sniper import run_js_sniper
 from modules.docker_breaker import run_docker_breaker
 
+
+console = Console()
 # ==========================================
 # GESTION DES COULEURS (UI)
 # ==========================================
@@ -99,6 +103,9 @@ def main():
     p_brute.add_argument("--pass-field", default="password", help="Nom du champ mot de passe (HTML name)")
     p_brute.add_argument("--fail", default="Invalid", help="Message d'erreur en cas d'échec")
     p_brute.add_argument("-t", "--threads", type=int, default=10, help="Nombre de tentatives simultanées")
+    p_brute.add_argument("--cookie", help="Cookie de session (ex: 'PHPSESSID=abc123z')", default="")
+    p_brute.add_argument("--captcha-field", help="Nom du champ HTML du captcha (ex: 'captcha_code')", default="")
+    p_brute.add_argument("--captcha-val", help="Valeur du captcha résolu manuellement", default="")
     p_brute.set_defaults(func=run_brute_custom)
 
     # --- Module: Web Spider ---
@@ -195,6 +202,20 @@ def main():
     # Affichage de la bannière avant d'exécuter la fonction du module
     print_banner()
     args.func(args)
+    module_name = args.module  # ou le nom de la commande tapée
+
+# On lance l'animation globale !
+    with console.status(f"[bold cyan]Démarrage de l'assaut : Module {module_name} en cours...[/bold cyan]", spinner="bouncingBar"):
+        
+        try:
+            if module_name == "enum":
+                run_enum(args)
+            elif module_name == "scan":
+                run_scan(args)
+            # ... tes autres modules ...
+            
+        except KeyboardInterrupt:
+            console.print("\n[bold red][-] Arrêt d'urgence par l'utilisateur (CTRL+C).[/bold red]")
 
 if __name__ == "__main__":
     try:
