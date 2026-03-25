@@ -26,6 +26,8 @@ from modules.wordlist_fetcher import run_update
 from modules.js_sniper import run_js_sniper
 from modules.docker_breaker import run_docker_breaker
 from modules.api_hunter import run_api_hunter
+from modules.vhost_hunter import run_vhost_hunter
+from modules.shell_catcher import run_shell_catcher
 
 console = Console()
 
@@ -203,6 +205,20 @@ def main():
     api_parser.add_argument("-t", "--threads", type=int, default=30, help="Nombre de threads (défaut: 30)")
     # On utilise set_defaults(func=...) comme pour tous les autres modules !
     api_parser.set_defaults(func=run_api_hunter) 
+
+# --- Module: VHost Hunter ---
+    p_vhost = subparsers.add_parser("vhost", help="Fuzz les Virtual Hosts pour trouver des sous-domaines cachés")
+    p_vhost.add_argument("-i", "--ip", required=True, help="L'adresse IP du serveur")
+    p_vhost.add_argument("-d", "--domain", required=True, help="Le domaine racine (ex: target.htb)")
+    p_vhost.add_argument("-w", "--wordlist", required=True, help="Dictionnaire de sous-domaines")
+    p_vhost.add_argument("-t", "--threads", type=int, default=50)
+    p_vhost.set_defaults(func=run_vhost_hunter)
+
+    # --- Module: Shell Catcher ---
+    p_catch = subparsers.add_parser("catch", help="Écoute et stabilise automatiquement un reverse shell entrant")
+    p_catch.add_argument("-p", "--port", type=int, default=4444, help="Port local sur lequel écouter")
+    p_catch.set_defaults(func=run_shell_catcher)
+
 
 
     # 3. Exécution finale
