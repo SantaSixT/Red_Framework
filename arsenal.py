@@ -3,7 +3,6 @@ import sys
 import os
 from rich.console import Console
 
-
 # Imports des modules du Framework
 from core.config import load_secure_config
 from core.reporter import show_notes
@@ -26,9 +25,10 @@ from modules.report_export import generate_html
 from modules.wordlist_fetcher import run_update
 from modules.js_sniper import run_js_sniper
 from modules.docker_breaker import run_docker_breaker
-
+from modules.api_hunter import run_api_hunter
 
 console = Console()
+
 # ==========================================
 # GESTION DES COULEURS (UI)
 # ==========================================
@@ -181,39 +181,46 @@ def main():
     p_notes = subparsers.add_parser("notes", help="Affiche le rapport d'audit actuel dans le terminal")
     p_notes.set_defaults(func=lambda args: show_notes())
 
-# --- Module: JS Endpoint Sniper ---
+    # --- Module: JS Endpoint Sniper ---
     p_sniper = subparsers.add_parser("js-sniper", help="Traque les clés d'API et routes cachées dans le JavaScript")
     p_sniper.add_argument("-u", "--url", required=True, help="URL de la page web ou directement d'un fichier .js")
     p_sniper.add_argument("-t", "--threads", type=int, default=10, help="Nombre de téléchargements JS simultanés")
     p_sniper.set_defaults(func=run_js_sniper)
 
-# --- Module: Docker Breakout ---
+    # --- Module: Docker Breakout ---
     p_docker = subparsers.add_parser("docker", help="Génère un script Bash d'évasion de conteneur (Docker/K8s)")
     p_docker.add_argument("--lhost", required=True, help="Votre adresse IP (pour le reverse shell root)")
     p_docker.add_argument("--lport", type=int, default=4444, help="Votre port d'écoute")
     p_docker.add_argument("-o", "--output", default="breakout.sh", help="Nom du script de sortie")
     p_docker.set_defaults(func=run_docker_breaker)
 
+    # ==========================================
+    # MODULE : API HUNTER
+    # ==========================================
+    api_parser = subparsers.add_parser("api-hunter", help="Traque les documentations d'API (Swagger) et les endpoints cachés.")
+    api_parser.add_argument("-u", "--url", required=True, help="URL de base de l'API (ex: http://target.htb ou http://target.htb/api)")
+    api_parser.add_argument("-w", "--wordlist", default="auto", help="Chemin du dictionnaire (défaut: 'auto' pour chasser les Swagger)")
+    api_parser.add_argument("-t", "--threads", type=int, default=30, help="Nombre de threads (défaut: 30)")
+    # On utilise set_defaults(func=...) comme pour tous les autres modules !
+    api_parser.set_defaults(func=run_api_hunter) 
 
 
     # 3. Exécution finale
     args = parser.parse_args()
     
-    # Affichage de la bannière avant d'exécuter la fonction du module
+    # Affichage de la bannière
     print_banner()
-    args.func(args)
-    module_name = args.module  # ou le nom de la commande tapée
 
-# On lance l'animation globale !
-    with console.status(f"[bold cyan]Démarrage de l'assaut : Module {module_name} en cours...[/bold cyan]", spinner="bouncingBar"):
-        
+    # Lancement dynamique du module choisi par l'utilisateur, enrobé d'une belle animation `rich`
+    with console.status(f"[bold cyan]Démarrage de l'assaut : Module '{args.module}' en cours...[/bold cyan]", spinner="bouncingBar"):
         try:
-            if module_name == "enum":
-                run_enum(args)
-            elif module_name == "scan":
-                run_scan(args)
-            # ... tes autres modules ...
-            
+            # Cette ligne magique remplace tous tes "if module == ... :"
+            # Elle appelle automatiquement la fonction définie par set_defaults(func=...)
+            if hasattr(args, 'func'):
+                args.func(args)
+            else:
+                console.print("[bold red]Erreur : Ce module n'a pas de fonction associée.[/bold red]")
+                
         except KeyboardInterrupt:
             console.print("\n[bold red][-] Arrêt d'urgence par l'utilisateur (CTRL+C).[/bold red]")
 

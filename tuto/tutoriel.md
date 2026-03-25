@@ -127,3 +127,7 @@ python arsenal.py export
 ```
 
 ---
+
+```bash
+python arsenal.py api-hunter -u http://facts.htb/api
+ ```
