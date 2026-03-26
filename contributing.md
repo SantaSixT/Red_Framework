@@ -24,6 +24,5 @@ Vous souhaitez forger une nouvelle arme pour l'arsenal ? Voici les règles d'or 
 * **Asynchrone d'abord :** Pour tout ce qui touche au réseau, utilisez `aiohttp` et `asyncio`. Bannissez la librairie standard `requests` qui bloque les threads.
 * **Discrétion :** Prévoyez toujours des *Timeouts* courts (ex: 5 secondes) et passez toujours par la fonction de détection WAF (`core/waf.py`) avant de lancer un brute-force.
 * **Couleurs :** Utilisez la classe `Colors` native pour vos affichages dans le terminal afin de garder une cohérence visuelle.
-```
 
 ---
