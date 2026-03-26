@@ -28,6 +28,9 @@ from modules.api_hunter import run_api_hunter
 from modules.vhost_hunter import run_vhost_hunter
 from modules.shell_catcher import run_shell_catcher
 from modules.param_nuke import run_nuke
+from modules.burp_intruder import run_intruder
+from modules.burp_decoder import run_decoder
+
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -221,6 +224,24 @@ def main():
     p_nuke.add_argument("-u", "--url", required=True, help="URL avec les paramètres (ex: 'http://site.htb/index.php?page=about&id=1')")
     p_nuke.add_argument("-t", "--threads", type=int, default=20, help="Nombre de roquettes simultanées")
     p_nuke.set_defaults(func=run_nuke)
+
+# --- Module: Burp Intruder (Sniper) ---
+    p_intruder = subparsers.add_parser("intruder", help="Fuzzer asynchrone basé sur une requête HTTP brute (comme Burp Suite)")
+    p_intruder.add_argument("-r", "--request", required=True, help="Chemin vers le fichier texte de la requête (contenant §FUZZ§)")
+    p_intruder.add_argument("-w", "--wordlist", required=True, help="Dictionnaire à utiliser")
+    p_intruder.add_argument("-s", "--scheme", default="http", choices=["http", "https"], help="Protocole (http ou https)")
+    p_intruder.add_argument("-p", "--port", type=int, default=80, help="Port cible (défaut: 80)")
+    p_intruder.add_argument("-t", "--threads", type=int, default=30, help="Nombre de requêtes simultanées")
+    p_intruder.set_defaults(func=run_intruder)
+
+    # --- Module: Burp Decoder ---
+    p_decoder = subparsers.add_parser("decoder", help="Encode ou décode des chaînes de caractères (Base64, URL, Hex, HTML)")
+    p_decoder.add_argument("mode", choices=["encode", "decode"], help="Action à effectuer")
+    p_decoder.add_argument("format", choices=["b64", "url", "hex", "html"], help="Format d'encodage")
+    p_decoder.add_argument("text", type=str, help="Le texte à traiter (Mettez-le entre guillemets)")
+    p_decoder.set_defaults(func=run_decoder)
+
+
 
     # 3. Exécution finale
     args = parser.parse_args()
