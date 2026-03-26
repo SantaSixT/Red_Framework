@@ -1,7 +1,6 @@
 import argparse
 import sys
 import os
-from rich.console import Console
 
 # Imports des modules du Framework
 from core.config import load_secure_config
@@ -28,8 +27,7 @@ from modules.docker_breaker import run_docker_breaker
 from modules.api_hunter import run_api_hunter
 from modules.vhost_hunter import run_vhost_hunter
 from modules.shell_catcher import run_shell_catcher
-
-console = Console()
+from modules.param_nuke import run_nuke
 
 # ==========================================
 # GESTION DES COULEURS (UI)
@@ -203,10 +201,9 @@ def main():
     api_parser.add_argument("-u", "--url", required=True, help="URL de base de l'API (ex: http://target.htb ou http://target.htb/api)")
     api_parser.add_argument("-w", "--wordlist", default="auto", help="Chemin du dictionnaire (défaut: 'auto' pour chasser les Swagger)")
     api_parser.add_argument("-t", "--threads", type=int, default=30, help="Nombre de threads (défaut: 30)")
-    # On utilise set_defaults(func=...) comme pour tous les autres modules !
     api_parser.set_defaults(func=run_api_hunter) 
 
-# --- Module: VHost Hunter ---
+    # --- Module: VHost Hunter ---
     p_vhost = subparsers.add_parser("vhost", help="Fuzz les Virtual Hosts pour trouver des sous-domaines cachés")
     p_vhost.add_argument("-i", "--ip", required=True, help="L'adresse IP du serveur")
     p_vhost.add_argument("-d", "--domain", required=True, help="Le domaine racine (ex: target.htb)")
@@ -219,7 +216,11 @@ def main():
     p_catch.add_argument("-p", "--port", type=int, default=4444, help="Port local sur lequel écouter")
     p_catch.set_defaults(func=run_shell_catcher)
 
-
+    # --- Module: Param Nuke (RCE/LFI) ---
+    p_nuke = subparsers.add_parser("nuke", help="Bombarde les paramètres d'une URL pour trouver des RCE/LFI critiques")
+    p_nuke.add_argument("-u", "--url", required=True, help="URL avec les paramètres (ex: 'http://site.htb/index.php?page=about&id=1')")
+    p_nuke.add_argument("-t", "--threads", type=int, default=20, help="Nombre de roquettes simultanées")
+    p_nuke.set_defaults(func=run_nuke)
 
     # 3. Exécution finale
     args = parser.parse_args()
@@ -227,18 +228,17 @@ def main():
     # Affichage de la bannière
     print_banner()
 
-    # Lancement dynamique du module choisi par l'utilisateur, enrobé d'une belle animation `rich`
-    with console.status(f"[bold cyan]Démarrage de l'assaut : Module '{args.module}' en cours...[/bold cyan]", spinner="bouncingBar"):
-        try:
-            # Cette ligne magique remplace tous tes "if module == ... :"
-            # Elle appelle automatiquement la fonction définie par set_defaults(func=...)
-            if hasattr(args, 'func'):
-                args.func(args)
-            else:
-                console.print("[bold red]Erreur : Ce module n'a pas de fonction associée.[/bold red]")
-                
-        except KeyboardInterrupt:
-            console.print("\n[bold red][-] Arrêt d'urgence par l'utilisateur (CTRL+C).[/bold red]")
+    # Lancement dynamique du module choisi par l'utilisateur (Version natif sans "rich")
+    print(f"\n{Colors.CYAN}[*] Démarrage de l'assaut : Module '{args.module}' en cours...{Colors.RESET}\n")
+    try:
+        # Cette ligne magique appelle automatiquement la fonction définie par set_defaults(func=...)
+        if hasattr(args, 'func'):
+            args.func(args)
+        else:
+            print(f"{Colors.RED}[-] Erreur : Ce module n'a pas de fonction associée.{Colors.RESET}")
+            
+    except KeyboardInterrupt:
+        print(f"\n{Colors.RED}[-] Arrêt d'urgence par l'utilisateur (CTRL+C).{Colors.RESET}")
 
 if __name__ == "__main__":
     try:
