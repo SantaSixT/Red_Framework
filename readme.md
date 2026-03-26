@@ -138,8 +138,7 @@ L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsena
 | **`notes`** | Visionneuse terminal | *Aucun* | *Aucun* |
 
 ---
-```
-```markdown
+
 ## 🎯 Scénarios d'Attaque (Playbooks)
 
 Voici comment enchaîner les modules du Red_Framework lors d'un audit réel pour maximiser vos chances de compromission, de la reconnaissance jusqu'au shell root.
@@ -202,4 +201,5 @@ Une fois la machine "Rootée", on exporte le tableau de bord pour le client.
 ```bash
 python arsenal.py export
 ```
+
 ```
