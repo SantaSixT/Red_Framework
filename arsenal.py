@@ -30,6 +30,7 @@ from modules.shell_catcher import run_shell_catcher
 from modules.param_nuke import run_nuke
 from modules.burp_intruder import run_intruder
 from modules.burp_decoder import run_decoder
+from modules.adkill.adkill import run_adkill
 
 
 # ==========================================
@@ -240,8 +241,15 @@ def main():
     p_decoder.add_argument("format", choices=["b64", "url", "hex", "html"], help="Format d'encodage")
     p_decoder.add_argument("text", type=str, help="Le texte à traiter (Mettez-le entre guillemets)")
     p_decoder.set_defaults(func=run_decoder)
-
-
+    
+        # --- Module: ADKill (Chaîne AD automatisée) ---
+    p_adkill = subparsers.add_parser("adkill", help="Chaîne AD réactive : Enum -> AS-REP/Kerberoast -> Crack auto")
+    p_adkill.add_argument("-d", "--domain", required=True, help="Domaine cible (ex: corp.htb)")
+    p_adkill.add_argument("--dc-ip", required=True, help="IP du Domain Controller")
+    p_adkill.add_argument("-U", "--userlist", help="Liste d'utilisateurs à énumérer (fichier)")
+    p_adkill.add_argument("-w", "--wordlist", default="/usr/share/wordlists/rockyou.txt", help="Wordlist pour le crack auto")
+    p_adkill.add_argument("--spray", help="Teste un mot de passe unique sur tous les users trouvés (ex: 'Welcome1')")
+    p_adkill.set_defaults(func=run_adkill)
 
     # 3. Exécution finale
     args = parser.parse_args()

